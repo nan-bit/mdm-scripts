@@ -263,14 +263,15 @@ case "$agent:$target_os" in
 esac
 
 # --- build (printf is pure structure; commands are JSON-escaped via js) --------
-# Output matches jq's 2-space pretty-print exactly, so the checked-in examples/
-# stay byte-identical when regenerated. $3 is the trailing "," (or "" for the
-# last entry in a block).
+# Output matches jq's 2-space pretty-print exactly, except that the Cursor output
+# writes every "/" as "\/". The Cursor CLI strips "//" and "/* */" as comments even
+# inside strings, and drops the whole file when the result does not parse.
+# $3 is the trailing "," (or "" for the last entry in a block).
 cursor_hook()  { printf '    "%s": [\n      {\n        "command": "%s"\n      }\n    ]%s\n' "$1" "$2" "$3"; }
 claude_hook()  { printf '    "%s": [\n      {\n        "hooks": [\n          {\n            "type": "command",\n            "command": "%s"\n          }\n        ]\n      }\n    ]%s\n' "$1" "$2" "$3"; }
 claude_mhook() { printf '    "%s": [\n      {\n        "hooks": [\n          {\n            "type": "command",\n            "command": "%s"\n          }\n        ],\n        "matcher": ".*"\n      }\n    ]%s\n' "$1" "$2" "$3"; }
 
-build_cursor() {
+cursor_doc() {
   _s=$(js "$cmd_session"); _a=$(js "$cmd_audit")
   printf '{\n  "version": 1,\n  "hooks": {\n'
   cursor_hook sessionStart "$_s" ,
@@ -281,6 +282,8 @@ build_cursor() {
   cursor_hook stop "$_a" ""
   printf '  }\n}\n'
 }
+# Structural JSON has no "/", so escaping the whole document is safe.
+build_cursor() { cursor_doc | sed 's|/|\\/|g'; }
 
 build_claude() {
   _s=$(js "$cmd_session"); _a=$(js "$cmd_audit")

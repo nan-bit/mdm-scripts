@@ -57,7 +57,7 @@ Set-Content -Path $dest -Value @'
 '@ -Encoding UTF8
 ```
 
-Set it to **Run as Repeating** to keep it current; to update, edit the embedded JSON and re-push. For a per-user `%USERPROFILE%\.cursor\hooks.json`, use JumpCloud's **"Run As Signed In User"** template instead of the SYSTEM default.
+Set it to **Run as Repeating** to keep it current; to update, edit the embedded JSON and re-push. The `\/` escapes in the generated Cursor JSON are deliberate (the Cursor CLI treats `//` as a comment even inside strings), so keep them. For a per-user `%USERPROFILE%\.cursor\hooks.json`, use JumpCloud's **"Run As Signed In User"** template instead of the SYSTEM default.
 
 ## Things to watch
 

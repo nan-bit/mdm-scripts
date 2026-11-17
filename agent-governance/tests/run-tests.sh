@@ -309,6 +309,35 @@ for rel in cursor/hooks.json cursor/hooks.windows.json \
   else bad "examples/$rel is stale - regenerate it (see README \"Examples\")"; fi
 done
 
+# The Cursor CLI strips "//" and "/* */" as comments before JSON.parse, even inside
+# strings. A raw "https://" would truncate each line and the CLI drops the file.
+sec "Cursor hooks.json survives the CLI's comment stripping"
+if command -v python3 >/dev/null 2>&1; then
+  # The "???" namespace puts "/" into the Windows base64, which the demo one never does.
+  for os in macos linux windows; do
+    "$AG/scripts/render.sh" --api-key $K --api-secret $S --namespace '???' \
+      --agent cursor --target-os "$os" -o "$GEN/cursor/strip.$os.json" >/dev/null 2>&1
+    if python3 - "$GEN/cursor/strip.$os.json" "$os" <<'PY'
+import json, re, sys
+raw = open(sys.argv[1]).read()
+if re.search(r'(?<!\\)/', raw): sys.exit('raw "/" in the output')
+stripped = re.sub(r'/\*[\s\S]*?\*/', '', re.sub(r'//.*$', '', raw, flags=re.M))
+orig = json.loads(raw)
+if json.loads(stripped) != orig: sys.exit('stripping changed the parsed document')
+# The Windows command is base64 UTF-16LE, so decode it before looking for the URL.
+cmds = [h[0]['command'] for h in orig['hooks'].values()]
+if sys.argv[2] == 'windows':
+    import base64
+    cmds = [base64.b64decode(c.split()[-1]).decode('utf-16le') for c in cmds]
+if not all('https://' in c for c in cmds): sys.exit('a decoded command lost its https://')
+PY
+    then ok "cursor $os: no raw slash, parses to the same document, URLs intact"
+    else bad "cursor $os: raw \"/\", or the CLI comment stripping breaks the file or loses a URL"; fi
+  done
+else
+  echo "  (skipped, needs python3)"
+fi
+
 sec "every embedded hook command is valid shell after JSON/TOML escaping"
 if command -v python3 >/dev/null 2>&1; then
   python3 - "$AG" "$WORK" <<'PY'

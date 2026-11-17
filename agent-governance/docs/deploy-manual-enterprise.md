@@ -33,7 +33,7 @@ Use the `--target-os windows` config when the file lands on Windows, and the def
 
 If you run Cursor's or Claude's enterprise platform, you can govern the fleet without touching MDM — generate the config as above and supply it through the platform:
 
-- **Cursor — Team hooks** (Enterprise plan). Configure hooks in the Team dashboard; Cursor cloud-delivers them to members on login and supports OS-specific targeting. Paste the body of the generated `hooks.json` (POSIX for macOS/Linux, the `--target-os windows` variant for Windows) into the matching OS slot.
+- **Cursor — Team hooks** (Enterprise plan). Configure hooks in the Team dashboard; Cursor cloud-delivers them to members on login and supports OS-specific targeting. Paste the body of the generated `hooks.json` (POSIX for macOS/Linux, the `--target-os windows` variant for Windows) into the matching OS slot. The `\/` escapes in the generated Cursor JSON are deliberate (the Cursor CLI treats `//` as a comment even inside strings), so keep them.
 - **Claude Code — server-managed settings.** In the Claude admin console, set server-managed settings to the same `env` + `hooks` that `render.sh --agent claude` produces. These are the **highest-precedence** scope, so this alone can govern the fleet.
 
 ## Which to use
